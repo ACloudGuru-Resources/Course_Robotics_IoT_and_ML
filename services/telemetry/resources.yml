@@ -1,0 +1,14 @@
+Resources:
+  TelemetryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: telemetry-${self:provider.stage}
+      AttributeDefinitions:
+        - AttributeName: telemetryId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: telemetryId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
