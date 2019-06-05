@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sasasavic82/acg-roborover-course.git"
+    "url": "git+https://github.com/ACloudGuru-Resources/Course_Robotics_IoT_and_ML.git"
   },
   "author": "Sasa Savic <sasa@imbue.app>",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sasasavic82/acg-roborover-course/issues"
+    "url": "https://github.com/ACloudGuru-Resources/Course_Robotics_IoT_and_ML/issues"
   },
-  "homepage": "https://github.com/sasasavic82/acg-roborover-course#readme",
+  "homepage": "https://github.com/ACloudGuru-Resources/Course_Robotics_IoT_and_ML#readme",
   "dependencies": {
     "aws-sdk": "^2.468.0",
     "lodash": "^4.17.11"
