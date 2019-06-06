@@ -1,24 +1,26 @@
 'use strict';
 
 const AWS = require('aws-sdk');
+const ImageModel = require('./models/image.model');
+
 const recognition = new AWS.Rekognition();
 
 class Recognizer {
 
-  static resolveLabels(s3Config) {
+  static resolveLabels({bucket, imageName}) {
     
     const params = {
       Image: {
         S3Object: {
-          Bucket: s3Config.bucket,
-          Name: s3Config.imageName,
+          Bucket: bucket,
+          Name: imageName,
         },
       },
       MaxLabels: 10,
       MinConfidence: 50,
     };
 
-    console.log(`Analyzing file: https://s3.amazonaws.com/${s3Config.bucket}/${s3Config.imageName}`);
+    console.log(`Analyzing file: https://s3.amazonaws.com/${bucket}/${imageName}`);
 
     return new Promise((resolve, reject) => {
       recognition.detectLabels(params, (err, data) => {
@@ -29,6 +31,25 @@ class Recognizer {
         return resolve(data.Labels);
       });
     });
+  }
+
+  static saveLabels({bucket, imageName, labels}) {
+    
+    const image = new ImageModel({
+      roboRoverId: 'robo_rover',
+      labels: labels,
+      imagePath: `https://s3.amazonaws.com/${bucket}/${imageName}`
+    });
+
+    return new Promise((resolve, reject) => {
+      image.save((err)=> {
+        if(err) {
+          return reject(new Error(err));
+        }
+        return resolve(image);
+      });
+    });    
+
   }
 }
 

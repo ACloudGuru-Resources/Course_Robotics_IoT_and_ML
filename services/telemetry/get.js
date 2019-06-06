@@ -1,7 +1,15 @@
 'use strict';
+let { failure, success } = require('../../libs/helper');
+let TelemetryModel = require('../../libs/models/telemetry.model');
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event, context, callback) => {
 
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
+  try {
+    let result = await TelemetryModel.query('timestamp').descending().limit(10).exec();
+    return callback(null, success(result));
+
+  } catch (e) {
+    return callback(null, failure(e));
+  }
+
 };

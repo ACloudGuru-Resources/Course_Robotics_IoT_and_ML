@@ -10,6 +10,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
   environment:
+    REGION: ${self:provider.region}
     TELEMETRY_TABLE: telemetry-${self:provider.stage}
 
 functions:

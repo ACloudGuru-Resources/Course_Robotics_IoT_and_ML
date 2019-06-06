@@ -1,7 +1,27 @@
 'use strict';
 
+let TelemetryModel = require('../../libs/models/telemetry.model');
+let { v4 } = require('uuid');
+
 module.exports.handler = async (event) => {
 
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
+  let message = {};
+
+  if (typeof event === 'object') {
+      message = event;
+  } else {
+      message = JSON.parse(event);
+  }
+
+  message['telemetryId'] = v4();
+
+  let telemetry = new TelemetryModel(message);
+
+  telemetry.save((err) => {
+    if(err) {
+      console.log(err);
+      return;
+    }
+  });
+
 };

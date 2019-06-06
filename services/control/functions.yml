@@ -8,7 +8,7 @@ control-post:
     - Effect: "Allow"        
       Action:
         - iot:Publish
-      Resource: "arn:aws:iot:${self:provider.region}:#{AWS::AccountId}:topic/roborover/telemetry/*"
+      Resource: "arn:aws:iot:${self:provider.region}:#{AWS::AccountId}:topic/roborover/control/*"
   events:
     - http:
         path: api/control
