@@ -54,3 +54,6 @@ env.yml
 
 # Serverless
 .serverless
+
+# Certificates
+certs
