@@ -1,4 +1,5 @@
 const dynamoose = require('dynamoose');
+const { v4 } = require('uuid');
 
 const DEFAULTS = {
     tableName: process.env.TELEMETRY_TABLE,
@@ -18,26 +19,25 @@ dynamoose.AWS.config.update({
 const TelemetrySchema = new dynamoose.Schema({
     telemetryId: {
         type: String,
-        hashKey: true
-    },
-    missionId: {
-        type: String,
-        rangeKey: true,
-        index: {
-            global: true,
-            name: 'MissionIndex',
-            project: true,
-            hashKey: 'missionId'
+        hashKey: true,
+        default: function() {
+            return v4();
         }
     },
+    timestamp: {
+        type: Number,
+        default: function() {
+            return Date.now();
+        }
+    },
+    voltage: Number,
     distance: Number,
     longitude: Number,
     latitude: Number,
     humidity: Number,
     pressure: Number,
     temperature: Number,
-    last_command: Object,
-    timestamp: Date
+    last_command: Object
 });
 
 let TelemetryModel = dynamoose.model(DEFAULTS.tableName, TelemetrySchema, DEFAULTS.schemaOptions);

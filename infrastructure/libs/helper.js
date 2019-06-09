@@ -38,6 +38,10 @@ function path(event, param) {
     return event.path[param];
 }
 
+function parseEvent(event) {
+    return typeof event === 'object' ? event : JSON.parse(event);
+}
+
 module.exports = {
     parseBody,
     success,
@@ -45,5 +49,6 @@ module.exports = {
     notfound,
     notmodified,
     parameterValue,
-    path
+    path,
+    parseEvent
 }

@@ -1,27 +1,18 @@
 'use strict';
 
 let TelemetryModel = require('../../libs/models/telemetry.model');
-let { v4 } = require('uuid');
+let { parseEvent } = require('../../libs/helper');
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event, context, callback) => {
 
-  let message = {};
+  let data = parseEvent(event);
+  let telemetry = new TelemetryModel(data);
 
-  if (typeof event === 'object') {
-      message = event;
-  } else {
-      message = JSON.parse(event);
+  try {
+    await telemetry.save();
+    return callback(null);
+  } catch (e) {
+    console.log(e);
+    return callback(e);
   }
-
-  message['telemetryId'] = v4();
-
-  let telemetry = new TelemetryModel(message);
-
-  telemetry.save((err) => {
-    if(err) {
-      console.log(err);
-      return;
-    }
-  });
-
 };

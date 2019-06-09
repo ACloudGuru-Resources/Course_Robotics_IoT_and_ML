@@ -1,10 +1,10 @@
 image-upload-recognition:
   handler: services/recognition/upload.handler
   iamRoleStatements:
-    - Effect: "Allow"
+    - Effect: 'Allow'
       Action:
-        - "rekognition:*"
-      Resource: "*"
+        - rekognition:*
+      Resource: '*'
     - Effect: 'Allow'
       Action:
         - dynamodb:PutItem

@@ -1,69 +1,86 @@
-let { Iot, IotData } = 'aws-sdk';
+let { Iot, IotData } = require('aws-sdk');
 let _ = require('lodash');
+let { v4 } = require('uuid');
 
 // Priority
-const Priority = Object.freeze({
-    LOW: Symbol('low'),
-    MEDIUM: Symbol('medium'),
-    HIGH: Symbol('high')
-});
+const Priority = {
+    LOW: 'low',
+    MEDIUM: 'medium',
+    HIGH: 'high'
+};
 
-const CommandType = Object.freeze({
-    MOVE: Symbol('move'),
-    STOP: Symbol('stop'),
-    WAYPOINTS: Symbol('waypoints'),
-    SPEED: Symbol('speed'),
-    IMAGE: Symbol('image')
-});
+const CommandType = {
+    FORWARD: 'forward',
+    BACKWARD: 'backward',
+    STOP: 'stop',
+    LEFT: 'left',
+    RIGHT: 'right',
+    DRIVE_CM: 'drive_cm',
+    DRIVE_DEGREES: 'drive_degrees',
+    LEFT_EYE: 'left_eye',
+    RIGHT_EYE: 'right_eye',
+    WAYPOINTS: 'waypoints',
+    SET_SPEED: 'set_speed',
+    IMAGE: 'image',
+    BULK: 'bulk'
+};
 
 const VERSION = '1.0';
 const QOS = 0;
 
+
 class Commander {
-    constructor({ region = 'ap-southeast-2', topicPrefix = 'device/control', endpoint }) {
+    constructor({ region = 'ap-southeast-2', topicPrefix = 'roborover/control' }) {
 
         this.region = region;
-        this.endpoint = endpoint;
         this.topicPrefix = topicPrefix;
+        this.endpoint = undefined;
+        this.iotData = undefined;
 
+        const iot = new Iot({ region: region });
 
-        this.iot = new Iot({ region: region });
-        this.iotData = new IotData({ endpoint: endpoint });
+        iot.describeEndpoint({}, (err, data) => {
+            if(err) 
+                throw new Error(err);
 
+            this.endpoint = data.endpointAddress;
+            this.iotData = new IotData({ endpoint: data.endpointAddress });
+        });
     }
 
-    _buildCommandTopic(uniqueDeviceId, command) {
+    _buildCommandTopic(command) {
         return [this.topicPrefix, command].join('/');
     }
 
-    _buildBase({ missionId, priority = Priority.LOW, topic, type, data }) {
+    _buildBase({ priority, topic, type, data }) {
 
-        let iotPayload = {}
-        iotPayload['topic'] = topic;
-        iotPayload['qos'] = QOS;
+        let outerPayload = {}
+        outerPayload['topic'] = topic;
+        outerPayload['qos'] = QOS;
 
-        iotPayload['payload'] = {};
-        iotPayload['payload']['missionId'] = missionId;
-        iotPayload['payload']['commandId'] = v4();
-        iotPayload['payload']['version'] = VERSION;
-        iotPayload['payload']['timestamp'] = Date.now();
-        iotPayload['payload']['priority'] = priority;
-        iotPayload['payload']['type'] = type;
-        iotPayload['payload'][type] = data;
+        let innerPayload = {}
+        innerPayload['commandId'] = v4();
+        innerPayload['version'] = VERSION;
+        innerPayload['timestamp'] = Date.now();
+        innerPayload['priority'] = priority;
+        innerPayload['type'] = type;
+        innerPayload[type] = data;
 
-        return iotPayload;
+        outerPayload['payload'] = JSON.stringify(innerPayload);
+
+        console.log(outerPayload);
+
+        return outerPayload;
     }
 
-    _buildCommandData(device, commandType) {
+    _buildCommandData(commandData, commandType, priority = Priority.LOW) {
 
-        const { missionId, deviceId, ...payload } = device;
-        const commandTopic = this._buildCommandTopic(deviceId, commandType);
+        const commandTopic = this._buildCommandTopic(commandType);
         const data = this._buildBase({
-            missionId: missionId,
             priority: priority,
             topic: commandTopic,
             type: commandType,
-            data: payload
+            data: commandData
         });
 
         return data;
@@ -73,44 +90,130 @@ class Commander {
         return new Promise((resolve, reject) => {
             this.iotData.publish(data, (err) => {
                 if (err) return reject(err);
-                return resolve(true);
+                return resolve(
+                    JSON.parse(data.payload));
             });
         })
     }
 
-    // [{ uniqueDeviceId: 1111, missionId: 2222 }]
-    land({ devices = [], priority = Priority.HIGH, ack = false }) {
-
-        // return an array of promises per unique device (if we want to "broadcast" a message to multiple devices)
-        let _publishPromises = _.map(devices, (device) => {
-            let _commandData = this._buildCommandData(device, CommandType.LAND);
-            return this._publish(_commandData);
-        })
-
-        return Promise.all(_publishPromises);
+    _buildSetSpeed(speed) {
+        let commandData = { speed: speed };
+        let commandPayload = this._buildCommandData(commandData, CommandType.SET_SPEED);
+        return commandPayload;
     }
 
-    returnToLanding({ devices = [], priority = Priority.HIGH, ack = false }) {
-
-        // return an array of promises per unique device (if we want to "broadcast" a message to multiple devices)
-        let _publishPromises = _.map(devices, (device) => {
-            let _commandData = this._buildCommandData(device, CommandType.RETURN_TO_LANDING);
-            return this._publish(_commandData);
-        });
-
-        return Promise.all(_publishPromises);
-
+    _buildForward(delay = 0) {
+        let commandData = { delay: delay };
+        let commandPayload = this._buildCommandData(commandData, CommandType.FORWARD);
+        return commandPayload;
     }
-    //[{ deviceId: 'aaa', missionId: 'aaaa', waypoints: [] }, { deviceId: 'bbb', missionId: 'bbsb', waypoint: []  }]
-    fly({ devices = [], priority = Priority.LOW, ack }) {
 
-        // return an array of promises per unique device (if we want to "broadcast" a message to multiple devices)
-        let _publishPromises = _.map(devices, (device) => {
-            let _commandData = this._buildCommandData(device, CommandType.LAND);
-            return this._publish(_commandData);
-        });
-
-        return Promise.all(_publishPromises);
-
+    _buildBackward(delay = 0) {
+        let commandData = { delay: delay };
+        let commandPayload = this._buildCommandData(commandData, CommandType.BACKWARD);
+        return commandPayload
     }
+
+    _buildRight(delay = 0) {
+        let commandData = { delay: delay };
+        let commandPayload = this._buildCommandData(commandData, CommandType.RIGHT);
+        return commandPayload;
+    }
+
+    _buildLeft(delay = 0) {
+        let commandData = { delay: delay };
+        let commandPayload = this._buildCommandData(commandData, CommandType.LEFT);
+        return commandPayload;
+    }
+
+    _buildStop() {
+        let commandData = {};
+        let commandPayload = this._buildCommandData(commandData, CommandType.STOP);
+        return commandPayload;
+    }
+
+    _buildDrive(distance = 50) {
+        let commandData = { distance: distance };
+        let commandPayload = this._buildCommandData(commandData, CommandType.DRIVE_CM);
+        return commandPayload;      
+    }
+
+    _buildDriveDegrees(degrees = 360) {
+        let commandData = { degrees: degrees };
+        let commandPayload = this._buildCommandData(commandData, CommandType.DRIVE_DEGREES);
+        return commandPayload;          
+    }
+
+    _buildBulkCommands(commands) {
+        let commandData = commands;
+        let commandPayload = this._buildCommandData(commandData, CommandType.BULK);
+        return commandPayload;
+    }
+
+    _buildImage() {
+        let commandData = {};
+        let commandPayload = this._buildCommandData(commandData, CommandType.IMAGE);
+        return commandPayload;
+    }
+
+    isInitialized(withError = false) {
+        const isInitialized = this.endpoint !== undefined;
+
+        if(withError && !isInitialized)
+            throw 'Commander not initialized';
+
+        return isInitialized;
+    }
+
+    setSpeed(speed) {
+        this.isInitialized(true);
+        return this._publish(this._buildSetSpeed(speed));
+    }
+
+    forward(delay = 0) {
+        this.isInitialized(true);
+        return this._publish(this._buildForward(delay));
+    }
+
+    backward(delay = 0) {
+        this.isInitialized(true);
+        return this._publish(this._buildBackward(delay));
+    }
+
+    right(delay = 0) {
+        this.isInitialized(true);
+        return this._publish(this._buildRight(delay));
+    }
+
+    left(delay = 0) {
+        this.isInitialized(true);
+        return this._publish(this._buildLeft(delay));
+    }
+
+    stop() {
+        this.isInitialized(true);
+        return this._publish(this._buildStop());
+    }
+
+    drive(distance = 50) {
+        this.isInitialized(true);
+        return this._publish(this._buildDrive(distance));        
+    }
+
+    driveDegrees(degrees = 360) {
+        this.isInitialized(true);
+        return this._publish(this._buildDriveDegrees(degrees));           
+    }
+
+    bulkCommands(commands) {
+        this.isInitialized(true);
+        return this._publish(this._buildBulkCommands(commands));
+    }
+    image() {
+        this.isInitialized(true);
+        return this._publish(this._buildImage());
+    }
+
 }
+
+module.exports = Commander;

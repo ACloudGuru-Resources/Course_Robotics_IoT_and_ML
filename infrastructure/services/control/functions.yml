@@ -1,14 +1,14 @@
 control-post:
   handler: services/control/post.handler
   iamRoleStatements:
-    - Effect: "Allow"        
+    - Effect: 'Allow'     
       Action:
         - iot:DescribeEndpoint
-      Resource: "*"
-    - Effect: "Allow"        
+      Resource: '*'
+    - Effect: 'Allow'      
       Action:
         - iot:Publish
-      Resource: "arn:aws:iot:${self:provider.region}:#{AWS::AccountId}:topic/roborover/control/*"
+      Resource: 'arn:aws:iot:${self:provider.region}:#{AWS::AccountId}:topic/roborover/control/*'
   events:
     - http:
         path: api/control
