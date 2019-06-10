@@ -1,19 +1,31 @@
 const _ = require('lodash');
 const awsIot = require('aws-iot-device-sdk');
-const moment = require('moment');
 const winston = require('winston');
 const program = require('commander');
 
-//const getSerial = require('./lib/common').getSerial;
+const Rover = require('./libs/rover');
+
+let rover = new Rover();
 
 let config;
+let device;
+let interval;
+
+process.stdin.setRawMode(true);
+process.stdin.resume();
+process.stdin.on('data', () => {
+
+    rover.kill();
+    clearInterval(interval);
+    
+    process.exit(0);
+});
 
 program
   .version('1.0.0')
   .option('-d, --development', 'Development environment')
   .option('-e, --endpoint [endpoint]', 'AWS IoT Endpoint where the Pi\'s will connect to')
   .option('-c, --clientId [clientId]', 'Unique Client ID')
-  .option("-m, --mac", "If on MacBook")
   .parse(process.argv);
 
 
@@ -30,8 +42,6 @@ if (program.endpoint)
 if (program.clientId)
     config.iot.clientId = program.clientId;
 
-if(program.mac)
-    config['mac'] = true
 
 winston.level = config.log;
 
@@ -43,13 +53,29 @@ winston.debug(config);
 
 
 config['baseEvent'] = {
-    deviceId: config.device.serialNo,
-    missionId: 'AAAA-BBBB-CCCC'
+    longitude: 33.3,
+    latitude: 44.4,
+    humidity: 84,
+    pressure: 1003,
+    temperature: 18,
+    last_command: undefined
+}
+
+let telemetryInterval = () => {
+    if(!device || !rover) return;
+
+    let telemetryData = rover.getAllTelemetry();
+    let event = _.assign(cfg.baseEvent, telemetryData);
+
+    device.publish(config.iot.topic.telemetry,
+        JSON.stringify(event), (err, data) => {
+            if(!err) winston.log('debug', '[EVENT]: ' + data);
+        });
 }
 
 function bootstrap(cfg) {
 
-    var device = awsIot.device({
+    device = awsIot.device({
         keyPath: `certs/deviceCert.key`,
         certPath: `certs/deviceCertAndCACert.crt`,
         caPath: 'certs/root.crt',
@@ -58,66 +84,38 @@ function bootstrap(cfg) {
         debug: cfg.log == 'debug' ? true : false
     });
     
-    device.subscribe(cfg.iot.queue.control);
+    device.subscribe(cfg.iot.topic.control);
 
     device.on('connect', () => {
-    
         winston.info(`Connected to ${cfg.iot.endpoint}`);
-    
-        let event;
-    
-        setInterval(() => {
-    
-            const data = {
-                lon: 33.3,
-                lat: 55.5,
-                elevation: 156.5,
-                timestamp: moment().format()
-            }
-    
-            event = _.assign(cfg.baseEvent, data);
-            // device/telemetry/<serialNumber>
-            device.publish(cfg.iot.queue.telemetry, JSON.stringify(event), (err, data) => {
-                if(!err) winston.log('debug', '[EVENT]: ' + JSON.stringify(event));
-            });
-    
-        }, cfg.sensors.pollingInterval);
-
-    
-    
+        interval = setInterval(telemetryInterval, cfg.sensors.pollingInterval);
     });
     
     device
         .on('message', function (topic, payload) {
-            //winston.log('debug', '[MESSAGE]:', topic, payload.toString());
 
-            let e = JSON.parse(payload.toString());
-            
-            console.log(e);
+            let data = JSON.parse(payload.toString());
 
-            if(topic == cfg.iot.queue.control) {
-                // TODO: control stuff
+            winston.log('debug', '[MESSAGE]:', topic, data);
 
-                let event = {
-                    type: 'status',
-                    origin: 'device',
-                    destination: 'base',
-                    data: {
-                        status: 'liftoff'
-                    },
-                    mission: e.mission,
-                    timestamp: moment.utc().format('YYYY-MM-DD HH:mm:ss.SSSSSSSSS')                        
-                };
+            config['baseEvent'].last_command = data;
 
-                setTimeout(() => {
-                    
-                    device.publish(cfg.iot.queue.control + 'takeoff_response', JSON.stringify(event), (err, data) => {
-                        if(!err) winston.log('debug', '[CONTROL]: initiating liftoff');
-                        else if(!err) console.log(err);
-                    });
-                    
-                }, 5000)
+            switch(topic) {
+                case cfg.iot.queue.control:
+                    let command = {}
+                    try {
+                        
+                        command['type'] = data.type;
+                        command[data.type] = data[data.type];
+                        rover.execute(command);
+
+                    }catch(e) {
+
+                    }
+
+                    break;
             }
+
         });
     
     device
@@ -137,15 +135,8 @@ function bootstrap(cfg) {
             winston.log('error', error);
         });
 
-    console.log('cool');
-
     return device;
 
 }
 
 bootstrap(config);
-
-
-
-// possible ways to have the payload:
-

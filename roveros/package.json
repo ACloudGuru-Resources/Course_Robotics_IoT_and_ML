@@ -19,8 +19,9 @@
   "dependencies": {
     "aws-iot-device-sdk": "^2.2.1",
     "lodash": "^4.17.11",
-    "moment": "^2.24.0",
     "winston": "^3.2.1",
-    "commander": "^2.20.0"
+    "commander": "^2.20.0",
+    "pi-camera": "^1.2.1",
+    "node-gopigo3": "^0.0.3"
   }
 }

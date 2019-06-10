@@ -214,6 +214,15 @@ class Commander {
         return this._publish(this._buildImage());
     }
 
+    execute(data) {
+        if(typeof this[data.type] != 'function' || data.type.toLowerCase() == 'execute')
+            throw `Command ${data.type} doesn't exist.`
+
+        let values = _.values(data.attributes);
+
+        return this[data.type].call(this, ...values);
+    }
+
 }
 
 module.exports = Commander;

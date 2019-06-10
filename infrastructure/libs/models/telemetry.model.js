@@ -32,6 +32,7 @@ const TelemetrySchema = new dynamoose.Schema({
     },
     voltage: Number,
     distance: Number,
+    speed: Number,
     longitude: Number,
     latitude: Number,
     humidity: Number,
