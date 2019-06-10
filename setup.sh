@@ -31,7 +31,7 @@ echo "Found AWS IoT Endpoint: ${ENDPOINT}"
 touch ./roveros/config/bootstrap.json
 
 echo "{
-  'endpoint': ${ENDPOINT}
+  \"endpoint\": \"${ENDPOINT}\"
 }" > ./roveros/config/bootstrap.json
 
 # Zip it

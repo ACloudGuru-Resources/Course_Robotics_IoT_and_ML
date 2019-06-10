@@ -57,3 +57,6 @@ env.yml
 
 # Certificates
 certs
+
+# Bootstrap Config
+config/bootstrap.json
