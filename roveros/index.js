@@ -76,9 +76,9 @@ let telemetryInterval = () => {
 function bootstrap(cfg) {
 
     device = awsIot.device({
-        keyPath: `certs/deviceCert.key`,
-        certPath: `certs/deviceCertAndCACert.crt`,
-        caPath: 'certs/root.crt',
+        keyPath: `certs/public.key`,
+        certPath: `certs/cert.pem`,
+        caPath: 'certs/root-CA.crt',
         clientId: cfg.iot.clientId,
         host: cfg.iot.endpoint,
         debug: cfg.log == 'debug' ? true : false
