@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const awsIot = require('aws-iot-device-sdk');
-const winston = require('winston');
 const program = require('commander');
 
 const Rover = require('./libs/rover');
@@ -42,14 +41,7 @@ if (program.endpoint)
 if (program.clientId)
     config.iot.clientId = program.clientId;
 
-
-winston.level = config.log;
-
-if(config['mac']) {
-
-}
-
-winston.debug(config);
+console.log(config);
 
 
 config['baseEvent'] = {
@@ -69,14 +61,14 @@ let telemetryInterval = () => {
 
     device.publish(config.iot.topic.telemetry,
         JSON.stringify(event), (err, data) => {
-            if(!err) winston.log('debug', '[EVENT]: ' + data);
+            if(!err) console.log('debug', '[EVENT]: ' + data);
         });
 }
 
 function bootstrap(cfg) {
 
     device = awsIot.device({
-        keyPath: `certs/public.key`,
+        keyPath: `certs/private.key`,
         certPath: `certs/cert.pem`,
         caPath: 'certs/root-CA.crt',
         clientId: cfg.iot.clientId,
@@ -87,7 +79,7 @@ function bootstrap(cfg) {
     device.subscribe(cfg.iot.topic.control);
 
     device.on('connect', () => {
-        winston.info(`Connected to ${cfg.iot.endpoint}`);
+        console.log(`Connected to ${cfg.iot.endpoint}`);
         interval = setInterval(telemetryInterval, cfg.sensors.pollingInterval);
     });
     
@@ -96,7 +88,7 @@ function bootstrap(cfg) {
 
             let data = JSON.parse(payload.toString());
 
-            winston.log('debug', '[MESSAGE]:', topic, data);
+            console.log('debug', '[MESSAGE]:', topic, data);
 
             config['baseEvent'].last_command = data;
 
@@ -120,19 +112,19 @@ function bootstrap(cfg) {
     
     device
         .on('close', function () {
-            winston.log('debug', `[CLOSE]: ${cfg.iot.endpoint}`);
+            console.log('debug', `[CLOSE]: ${cfg.iot.endpoint}`);
         });
     device
         .on('reconnect', function () {
-            winston.log('debug', `[RECONNECT]: ${cfg.iot.endpoint}`);
+            console.log('debug', `[RECONNECT]: ${cfg.iot.endpoint}`);
         });
     device
         .on('offline', function () {
-            winston.log('debug', `[OFFLINE]: ${cfg.iot.endpoint}`);
+            console.log('debug', `[OFFLINE]: ${cfg.iot.endpoint}`);
         });
     device
         .on('error', function (error) {
-            winston.log('error', error);
+            console.log('error', error);
         });
 
     return device;

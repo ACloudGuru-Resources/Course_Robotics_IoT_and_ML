@@ -36,5 +36,6 @@ functions:
   - ${file(./services/recognition/functions.yml)}
 
 resources:
+  - ${file(./shared/resources.yml)}
   - ${file(./services/telemetry/resources.yml)}
   - ${file(./services/recognition/resources.yml)}
