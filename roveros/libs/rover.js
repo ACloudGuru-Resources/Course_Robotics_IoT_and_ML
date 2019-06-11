@@ -10,6 +10,8 @@ class Rover {
         this.gpg = new EasyGopigo3();
         this.distanceSensor = undefined; 
         
+        this.stopVehicle = this._stopVehicle.bind(this);
+
         try {
             this.distanceSensor = this.gpg.initDistanceSensor();
         }catch(e) {
@@ -58,30 +60,33 @@ class Rover {
             case 'forward':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.forward();
-                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'backward':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.backward();
-                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
-            case 'stop': this.gpg.stop(); break;
+            case 'stop': 
+                this.gpg.stop();
+                console.log('debug', '[EXECUTE]', `Executing ${command.type}`);
+                break;
 
             case 'left':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.left();
-                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'right':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.right();
-                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
@@ -121,6 +126,7 @@ class Rover {
 
     _stopVehicle() {
         this.gpg.stop();
+        console.log('debug', '[EXECUTE]', `Executing stop after elapsed time`);
     }
 }
 

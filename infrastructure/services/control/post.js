@@ -22,19 +22,4 @@ module.exports.handler = async (event) => {
     return failure(e);
   }
 
-  /*
-  try {
-
-    if(typeof commander[data.type] == 'function')
-
-    let values = _.values(data.attributes);
-    // NOTE: ...values will spread an array of 
-    let ret = await commander[data.type].call(commander, ...values);
-    return success(ret);
-    
-  }catch(e) {
-    console.log(e);
-    return failure(e);
-  }
-*/
 };
