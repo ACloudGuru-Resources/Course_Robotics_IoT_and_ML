@@ -57,11 +57,11 @@ let telemetryInterval = () => {
     if(!device || !rover) return;
 
     let telemetryData = rover.getAllTelemetry();
-    let event = _.assign(cfg.baseEvent, telemetryData);
+    let event = _.assign(config.baseEvent, telemetryData);
 
     device.publish(config.iot.topic.telemetry,
-        JSON.stringify(event), (err, data) => {
-            if(!err) console.log('debug', '[EVENT]: ' + data);
+        JSON.stringify(event), (err) => {
+            if(!err) console.log('debug', '[EVENT]: ' + JSON.stringify(event));
         });
 }
 
@@ -76,7 +76,7 @@ function bootstrap(cfg) {
         debug: cfg.log == 'debug' ? true : false
     });
     
-    device.subscribe(cfg.iot.topic.control);
+    device.subscribe([cfg.iot.topic.control, '#'].join('/'));
 
     device.on('connect', () => {
         console.log(`Connected to ${cfg.iot.endpoint}`);
@@ -92,20 +92,18 @@ function bootstrap(cfg) {
 
             config['baseEvent'].last_command = data;
 
-            switch(topic) {
-                case cfg.iot.queue.control:
-                    let command = {}
-                    try {
-                        
-                        command['type'] = data.type;
-                        command[data.type] = data[data.type];
-                        rover.execute(command);
+            if(topic.includes('control')) {
 
-                    }catch(e) {
+                let command = {}
+                try {
+                    
+                    command['type'] = data.type;
+                    command[data.type] = data[data.type];
+                    rover.execute(command);
 
-                    }
-
-                    break;
+                }catch(e) {
+                    console.log(e);
+                }
             }
 
         });

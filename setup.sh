@@ -74,3 +74,5 @@ exit
 EOT
 
 # expect -c 'spawn ssh user@server "ls -lh file"; expect "assword:"; send "mypassword\r"; interact'
+
+# pip install picamera

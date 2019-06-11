@@ -8,7 +8,14 @@ class Rover {
 
     constructor() {
         this.gpg = new EasyGopigo3();
-        this.distanceSensor = undefined; //this.gpg.initDistanceSensor();
+        this.distanceSensor = undefined; 
+        
+        try {
+            this.distanceSensor = this.gpg.initDistanceSensor();
+        }catch(e) {
+            console.log('error', '[ROVER]', JSON.stringify(e));
+        }
+
         this.camera = new PiCamera({
             mode: 'photo',
             width: 640,
@@ -31,7 +38,7 @@ class Rover {
 
         let volt = this.gpg.volt();
         let speed = this.gpg.getSpeed();
-        let distance = 4; //this.distanceSensor.read();
+        let distance = this.distanceSensor ? this.distanceSensor.read() : -1; //this.distanceSensor.read();
 
         return {
             voltage: volt,
@@ -41,8 +48,8 @@ class Rover {
     }
 
     execute(command) {
-        if (!_.has(COMMANDS, command.type)) return;
-        
+        if (!_.includes(COMMANDS, command.type)) return;
+
         let delay;
         let distance;
         let speed;
@@ -51,13 +58,15 @@ class Rover {
             case 'forward':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.forward();
-                if (delay > 0) setTimeout(() => this.gpg.stop(), delay);
+                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'backward':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.backward();
-                if (delay > 0) setTimeout(() => this.gpg.stop(), delay);
+                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'stop': this.gpg.stop(); break;
@@ -65,23 +74,27 @@ class Rover {
             case 'left':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.left();
-                if (delay > 0) setTimeout(() => this.gpg.stop(), delay);
+                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'right':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.right();
-                if (delay > 0) setTimeout(() => this.gpg.stop(), delay);
+                if (delay > 0) setTimeout(this._stopVehicle, delay);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'drive_cm':
                 distance = parseInt(command[command.type].distance);
                 this.gpg.driveCm(distance);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a distance of ${distance}`);
                 break;
 
             case 'drive_degrees':
                 distance = parseInt(command[command.type].distance);
                 this.gpg.driveDegrees(distance);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a distance of ${distance}`);
                 break;
 
             case 'left_eye': break;
@@ -89,13 +102,14 @@ class Rover {
             case 'set_speed':
                 speed = parseInt(command[command.type].speed);
                 this.gpg.setSpeed(speed);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with speed of ${speed}`);
                 break;
 
             case 'image': 
                 this.camera.snap()
                     .then((result) => {
                         // TODO: Transfer to S3 Bucket
-                        console.log('image captured');
+                        console.log('debug', '[EXECUTE]', `Executing ${command.type}.`);
                     })
                     .catch((err) => console.log(err));
                 break;
@@ -103,6 +117,10 @@ class Rover {
             case 'bulk': break;
             default: break;
         }
+    }
+
+    _stopVehicle() {
+        this.gpg.stop();
     }
 }
 
