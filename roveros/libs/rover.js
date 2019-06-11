@@ -21,7 +21,7 @@ class Rover {
             width: 640,
             height: 480,
             nopreview: true,
-            output: `${__dirname}/images/captured.jpg`
+            output: `${__dirname}/../images/captured.jpg`
         });
     }
 
