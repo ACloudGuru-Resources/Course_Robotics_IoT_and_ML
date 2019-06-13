@@ -22,7 +22,8 @@ const CommandType = {
     WAYPOINTS: 'waypoints',
     SET_SPEED: 'set_speed',
     IMAGE: 'image',
-    BULK: 'bulk'
+    BULK: 'bulk',
+    ROTATE: 'rotate'
 };
 
 const VERSION = '1.0';
@@ -156,6 +157,11 @@ class Commander {
         return commandPayload;
     }
 
+    _buildRotate(rotation = 90) {
+        let commandData = { rotation: rotation };
+        let commandPayload = this._buildCommandData(commandData, CommandType.ROTATE)
+    }
+
     isInitialized(withError = false) {
         const isInitialized = this.endpoint !== undefined;
 
@@ -203,6 +209,11 @@ class Commander {
     driveDegrees(degrees = 360) {
         this.isInitialized(true);
         return this._publish(this._buildDriveDegrees(degrees));           
+    }
+
+    rotate(rotation = 90) {
+        this.isInitialized(true);
+        return this._publish(this._buildRotate(rotation));
     }
 
     bulkCommands(commands) {

@@ -2,7 +2,7 @@ const { EasyGopigo3 } = require('node-gopigo3');
 const _ = require('lodash');
 const PiCamera = require('pi-camera');
 
-const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'drive_cm', 'drive_degrees', 'left_eye', 'right_eye', 'set_speed', 'image', 'bulk'];
+const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'rotate', 'drive_cm', 'drive_degrees', 'left_eye', 'right_eye', 'set_speed', 'image', 'bulk'];
 
 class Rover {
 
@@ -55,6 +55,7 @@ class Rover {
         let delay;
         let distance;
         let speed;
+        let rotation;
 
         switch (command.type) {
             case 'forward':
@@ -95,7 +96,11 @@ class Rover {
                 this.gpg.driveCm(distance);
                 console.log('debug', '[EXECUTE]', `Executing ${command.type} with a distance of ${distance}`);
                 break;
-
+            case 'rotate':
+                rotation =  parseInt(command[command.type].rotation);
+                this.gpg.rotateServo(rotation);
+                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a rotation of ${rotation} degrees.`);
+                break;
             case 'drive_degrees':
                 distance = parseInt(command[command.type].distance);
                 this.gpg.driveDegrees(distance);
