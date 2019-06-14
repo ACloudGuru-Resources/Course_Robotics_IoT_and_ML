@@ -1,4 +1,5 @@
 let exec = require('child_process').exec;
+let fs = require('fs');
 
 function getSerial(){
     return new Promise((resolve, reject) => {
@@ -10,8 +11,14 @@ function getSerial(){
     })
 }
 
+function encodeFile(imagePath) {
+    let fileRead = fs.readFileSync(imagePath);
+    return new Buffer(fileRead).toString('base64');
+}
+
 module.exports = {
-    getSerial
+    getSerial,
+    encodeFile
 }
 
 

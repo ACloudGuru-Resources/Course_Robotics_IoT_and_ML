@@ -1,5 +1,8 @@
 
 module.exports = {
+    'api': {
+        'recognition': require('./bootstrap.json').recognition_endpoint
+    },
     'iot': {
         'endpoint': require('./bootstrap.json').endpoint, //process.env.AWS_IOT_ENDPOINT || 'a1o1xryvmqvun7.iot.ap-southeast-2.amazonaws.com',
         'clientId': process.env.CLIENT_ID || 'roborover_abc123',

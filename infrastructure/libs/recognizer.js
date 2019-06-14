@@ -6,21 +6,35 @@ const ImageModel = require('./models/image.model');
 const recognition = new AWS.Rekognition();
 
 class Recognizer {
+  constructor() { }
 
-  static resolveLabels({bucket, imageName}) {
-    
+  _getBinary(encodedFile) {
+    var base64Image = encodedFile.split("data:image/jpeg;base64,")[1];
+    var binaryImg = atob(base64Image);
+    var length = binaryImg.length;
+    var ab = new ArrayBuffer(length);
+    var ua = new Uint8Array(ab);
+    for (var i = 0; i < length; i++) {
+      ua[i] = binaryImg.charCodeAt(i);
+    }
+
+    var blob = new Blob([ab], {
+      type: "image/jpeg"
+    });
+
+    return ab;
+  }
+
+  resolveLabels(encodedImage) {
+    let imageBytes = this._getBinary(encodedImage);
+
     const params = {
       Image: {
-        S3Object: {
-          Bucket: bucket,
-          Name: imageName,
-        },
+        Bytes: imageBytes,
       },
       MaxLabels: 10,
       MinConfidence: 50,
     };
-
-    console.log(`Analyzing file: https://s3.amazonaws.com/${bucket}/${imageName}`);
 
     return new Promise((resolve, reject) => {
       recognition.detectLabels(params, (err, data) => {
@@ -33,24 +47,17 @@ class Recognizer {
     });
   }
 
-  static saveLabels({bucket, imageName, labels}) {
-    
+  saveLabels(encodedImage, labels) {
+
     const image = new ImageModel({
       roboRoverId: 'robo_rover',
       labels: labels,
-      imagePath: `https://s3.amazonaws.com/${bucket}/${imageName}`
+      encodedImage: encodedImage
     });
 
-    return new Promise((resolve, reject) => {
-      image.save((err)=> {
-        if(err) {
-          return reject(new Error(err));
-        }
-        return resolve(image);
-      });
-    });    
-
+    return image.save();
   }
 }
+
 
 module.exports = Recognizer;

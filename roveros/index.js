@@ -4,8 +4,6 @@ const program = require('commander');
 
 const Rover = require('./libs/rover');
 
-let rover = new Rover();
-
 let config;
 let device;
 let interval;
@@ -14,7 +12,8 @@ process.stdin.setRawMode(true);
 process.stdin.resume();
 process.stdin.on('data', () => {
 
-    rover.kill();
+    if(rover)
+        rover.kill();
     clearInterval(interval);
     
     process.exit(0);
@@ -33,7 +32,6 @@ if(!program.development)
 else
     config = require('./config')('development');
 
-config['mac'] = false;
 
 if (program.endpoint) 
     config.iot.endpoint = program.endpoint;
@@ -43,6 +41,7 @@ if (program.clientId)
 
 console.log(config);
 
+let rover = new Rover(config);
 
 config['baseEvent'] = {
     longitude: 33.3,
@@ -52,6 +51,8 @@ config['baseEvent'] = {
     temperature: 18,
     last_command: undefined
 }
+
+
 
 let telemetryInterval = () => {
     if(!device || !rover) return;

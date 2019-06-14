@@ -1,21 +1,30 @@
 const { EasyGopigo3 } = require('node-gopigo3');
 const _ = require('lodash');
 const PiCamera = require('pi-camera');
+const { encodeFile } = require('./common');
+let request = require('request');
 
 const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'rotate', 'drive_cm', 'drive_degrees', 'left_eye', 'right_eye', 'set_speed', 'image', 'bulk'];
 
 class Rover {
 
-    constructor() {
+    constructor(config) {
+        this.config = config;
         this.gpg = new EasyGopigo3();
-        this.distanceSensor = undefined; 
-        
+        this.distanceSensor = undefined;
+        this.servo = undefined;
         this.stopVehicle = this._stopVehicle.bind(this);
 
         try {
             this.distanceSensor = this.gpg.initDistanceSensor();
-        }catch(e) {
-            console.log('error', '[ROVER]', JSON.stringify(e));
+        } catch (e) {
+            console.log('error', '[ROVER_INIT]', JSON.stringify(e));
+        }
+
+        try {
+            this.servo = this.gpg.initServo();
+        } catch (e) {
+            console.log('error', '[ROVER_INIT]', JSON.stringify(e));
         }
 
         this.camera = new PiCamera({
@@ -62,49 +71,49 @@ class Rover {
                 delay = parseInt(command[command.type].delay);
                 this.gpg.forward();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'backward':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.backward();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
                 break;
 
-            case 'stop': 
+            case 'stop':
                 this.gpg.stop();
-                console.log('debug', '[EXECUTE]', `Executing ${command.type}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type}`);
                 break;
 
             case 'left':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.left();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'right':
                 delay = parseInt(command[command.type].delay);
                 this.gpg.right();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a delay of ${delay}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'drive_cm':
                 distance = parseInt(command[command.type].distance);
                 this.gpg.driveCm(distance);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a distance of ${distance}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a distance of ${distance}`);
                 break;
             case 'rotate':
-                rotation =  parseInt(command[command.type].rotation);
-                this.gpg.rotateServo(rotation);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a rotation of ${rotation} degrees.`);
+                rotation = parseInt(command[command.type].rotation);
+                this.servo.rotateServo(rotation);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a rotation of ${rotation} degrees.`);
                 break;
             case 'drive_degrees':
                 distance = parseInt(command[command.type].distance);
                 this.gpg.driveDegrees(distance);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with a distance of ${distance}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a distance of ${distance}`);
                 break;
 
             case 'left_eye': break;
@@ -112,18 +121,28 @@ class Rover {
             case 'set_speed':
                 speed = parseInt(command[command.type].speed);
                 this.gpg.setSpeed(speed);
-                console.log('debug', '[EXECUTE]', `Executing ${command.type} with speed of ${speed}`);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with speed of ${speed}`);
                 break;
 
-            case 'image': 
+            case 'image':
                 this.camera.snap()
                     .then((result) => {
-                        // TODO: Transfer to S3 Bucket
-                        console.log('debug', '[EXECUTE]', `Executing ${command.type}.`);
+                        console.log('debug', '[EXECUTE]', `Executed ${command.type}.`);
+                        let encoded = encodeFile(`${__dirname}/../images/captured.jpg`);
+                        return encoded;
+                    }).then((encoded) => {
+                        request.post(config.api.recognition, {
+                            json: {
+                                image: encoded
+                            }
+                        }, (err) => {
+                            if(err) return console.log(err);
+                            console.log('debug', '[POST]', `Sent file to recogniser.`);
+                        });
                     })
                     .catch((err) => console.log(err));
                 break;
-                
+
             case 'bulk': break;
             default: break;
         }

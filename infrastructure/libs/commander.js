@@ -160,6 +160,7 @@ class Commander {
     _buildRotate(rotation = 90) {
         let commandData = { rotation: rotation };
         let commandPayload = this._buildCommandData(commandData, CommandType.ROTATE)
+        return commandPayload;
     }
 
     isInitialized(withError = false) {

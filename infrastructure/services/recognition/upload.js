@@ -1,20 +1,20 @@
 'use strict';
 
-let _ = require('lodash');
+let { } = require('../../libs/helper');
 let Recognizer = require('../../libs/recognizer');
+
+let recognizer = new Recognizer();
 
 module.exports.handler = async (event) => {
 
+  let data = parseBody(event);
+
   try {
-    let s3Data = event.Records[0].s3;
-
-    console.log(s3Data);
-
-    let labels = await Recognizer.resolveLabels({ bucket: s3Data.bucket.name, imageName: s3Data.object.key });
-    await Recognizer.saveLabels({ bucket: s3Data.bucket.name, imageName: s3Data.object.key, labels: labels});
+    let labels = await recognizer.resolveLabels(data.image);
+    await recognizer.saveLabels(data.image, labels);
 
   } catch(e) {
     console.log(e);
   }
-
+  
 };
