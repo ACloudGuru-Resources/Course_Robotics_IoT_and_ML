@@ -1,6 +1,6 @@
 'use strict';
 
-let { } = require('../../libs/helper');
+let { parseBody } = require('../../libs/helper');
 let Recognizer = require('../../libs/recognizer');
 
 let recognizer = new Recognizer();
@@ -13,8 +13,8 @@ module.exports.handler = async (event) => {
     let labels = await recognizer.resolveLabels(data.image);
     await recognizer.saveLabels(data.image, labels);
 
-  } catch(e) {
+  } catch (e) {
     console.log(e);
   }
-  
+
 };

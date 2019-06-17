@@ -47,7 +47,7 @@ printf "\nFound AWS IoT Endpoint: ${ENDPOINT}...\n"
 
 # https://q0lh864dc2.execute-api.${REGION}.amazonaws.com/dev/api/recognize
 
-RECOGNITION_API_MODEL$(aws apigateway get-rest-apis --query 'items[?contains(name, `${ENV}-acg-roborover`) == `true`].id' --output text)
+RECOGNITION_API_MODEL=$(aws apigateway get-rest-apis --query 'items[?contains(name, `acg-roborover`) == `true`].id' --output text)
 
 # Check to see if anything was returned
 if [ $? -ne 0 ]
@@ -56,7 +56,7 @@ then
     exit 255
 fi
 
-RECOGNITION_ENDPOINT=https://${RECOGNITION_API_MODEL}.execute-api.${REGION}.amazonaws.com/${ENV}/api/recognize
+RECOGNITION_ENDPOINT="https://${RECOGNITION_API_MODEL}.execute-api.${REGION}.amazonaws.com/${ENV}/api/recognize"
 
 printf "\nAWS API Gateway Endpoint for Image Recognition: ${RECOGNITION_ENDPOINT}...\n"
 
@@ -64,7 +64,7 @@ touch ./roveros/config/bootstrap.json
 
 echo "{
   \"endpoint\": \"${ENDPOINT}\",
-  \"recognition_endpoint\": \"${RECOGNITION_ENDPOINT}"
+  \"recognition_endpoint\": \"${RECOGNITION_ENDPOINT}\"
 }" > ./roveros/config/bootstrap.json
 
 # Zip it

@@ -23,7 +23,8 @@ const CommandType = {
     SET_SPEED: 'set_speed',
     IMAGE: 'image',
     BULK: 'bulk',
-    ROTATE: 'rotate'
+    ROTATE_HORIZONTAL: 'rotate_horizontal',
+    ROTATE_VERTICAL: 'rotate_vertical'
 };
 
 const VERSION = '1.0';
@@ -157,9 +158,9 @@ class Commander {
         return commandPayload;
     }
 
-    _buildRotate(rotation = 90) {
+    _buildRotate(horizontal = true, rotation = 90) {
         let commandData = { rotation: rotation };
-        let commandPayload = this._buildCommandData(commandData, CommandType.ROTATE)
+        let commandPayload = this._buildCommandData(commandData, horizontal ? CommandType.ROTATE_HORIZONTAL : CommandType.ROTATE_VERTICAL);
         return commandPayload;
     }
 
@@ -212,9 +213,14 @@ class Commander {
         return this._publish(this._buildDriveDegrees(degrees));           
     }
 
-    rotate(rotation = 90) {
+    rotateHorizontal(rotation = 90) {
         this.isInitialized(true);
-        return this._publish(this._buildRotate(rotation));
+        return this._publish(this._buildRotate(true, rotation));
+    }
+
+    rotateVertical(rotation = 90) {
+        this.isInitialized(true);
+        return this._publish(this._buildRotate(false, rotation));
     }
 
     bulkCommands(commands) {

@@ -4,7 +4,7 @@ const PiCamera = require('pi-camera');
 const { encodeFile } = require('./common');
 let request = require('request');
 
-const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'rotate', 'drive_cm', 'drive_degrees', 'left_eye', 'right_eye', 'set_speed', 'image', 'bulk'];
+const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'rotate_vertical', 'rotate_horizontal', 'drive_cm', 'drive_degrees', 'left_eye', 'right_eye', 'set_speed', 'image', 'bulk'];
 
 class Rover {
 
@@ -12,7 +12,9 @@ class Rover {
         this.config = config;
         this.gpg = new EasyGopigo3();
         this.distanceSensor = undefined;
-        this.servo = undefined;
+        this.servoHorizontal = undefined;
+        this.servoVertical = undefined;
+
         this.stopVehicle = this._stopVehicle.bind(this);
 
         try {
@@ -22,7 +24,8 @@ class Rover {
         }
 
         try {
-            this.servo = this.gpg.initServo();
+            this.servoHorizontal = this.gpg.initServo();
+            this.servoVertical = this.gpg.initServo('SERVO2');
         } catch (e) {
             console.log('error', '[ROVER_INIT]', JSON.stringify(e));
         }
@@ -105,9 +108,14 @@ class Rover {
                 this.gpg.driveCm(distance);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a distance of ${distance}`);
                 break;
-            case 'rotate':
+            case 'rotate_horizontal':
                 rotation = parseInt(command[command.type].rotation);
-                this.servo.rotateServo(rotation);
+                this.servoHorizontal.rotateServo(rotation);
+                console.log('debug', '[EXECUTE]', `Executed ${command.type} with a rotation of ${rotation} degrees.`);
+                break;
+            case 'rotate_vertical':
+                rotation = parseInt(command[command.type].rotation);
+                this.servoVertical.rotateServo(rotation);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a rotation of ${rotation} degrees.`);
                 break;
             case 'drive_degrees':
@@ -131,12 +139,12 @@ class Rover {
                         let encoded = encodeFile(`${__dirname}/../images/captured.jpg`);
                         return encoded;
                     }).then((encoded) => {
-                        request.post(config.api.recognition, {
+                        request.post(this.config.api.recognition, {
                             json: {
                                 image: encoded
                             }
                         }, (err) => {
-                            if(err) return console.log(err);
+                            if (err) return console.log(err);
                             console.log('debug', '[POST]', `Sent file to recogniser.`);
                         });
                     })

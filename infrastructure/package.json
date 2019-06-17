@@ -23,6 +23,7 @@
     "serverless-iam-roles-per-function": "^2.0.1",
     "serverless-offline": "^5.0.1",
     "serverless-pseudo-parameters": "^2.4.0",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.2",
+    "atob": "^2.1.2"
   }
 }
