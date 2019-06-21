@@ -2,9 +2,30 @@ const { EasyGopigo3 } = require('node-gopigo3');
 const _ = require('lodash');
 const PiCamera = require('pi-camera');
 const { encodeFile } = require('./common');
+const Queue = require('./queue');
+
 let request = require('request');
 
-const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'rotate_vertical', 'rotate_horizontal', 'drive_cm', 'drive_degrees', 'left_eye', 'right_eye', 'set_speed', 'image', 'bulk'];
+const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'tilt', 'pan', 'drive_cm', 'drive_degrees', 'left_eye', 'right_eye', 'set_speed', 'image', 'bulk'];
+
+
+
+class RoverCommand {
+    
+    constructor(gpg) {
+        this.gpg = gpg;
+    }
+
+    getControllerInstance() {
+        return this.gpg;
+    }
+
+    kill() {
+        this.gpg.stop();
+        this.gpg.resetAll();
+    }
+
+}
 
 class Rover {
 
@@ -14,6 +35,9 @@ class Rover {
         this.distanceSensor = undefined;
         this.servoHorizontal = undefined;
         this.servoVertical = undefined;
+
+        this.commandQueue = new Queue();
+        this.queueInterval = undefined;
 
         this.stopVehicle = this._stopVehicle.bind(this);
 
@@ -37,6 +61,8 @@ class Rover {
             nopreview: true,
             output: `${__dirname}/../images/captured.jpg`
         });
+
+        this._listenInternal();
     }
 
     getRoverInstance() {
@@ -46,6 +72,7 @@ class Rover {
     kill() {
         this.gpg.stop();
         this.gpg.resetAll();
+        clearInterval(this.queueInterval);
     }
 
     getAllTelemetry() {
@@ -62,6 +89,12 @@ class Rover {
     }
 
     execute(command) {
+        if(!_.isArray(command))
+            command = [command];
+        _.each(command, (item) => this.commandQueue.add(item));
+    }
+
+    _executeInternal(command) {
         if (!_.includes(COMMANDS, command.type)) return;
 
         let delay;
@@ -85,7 +118,7 @@ class Rover {
                 break;
 
             case 'stop':
-                this.gpg.stop();
+                this._stopVehicle();
                 console.log('debug', '[EXECUTE]', `Executed ${command.type}`);
                 break;
 
@@ -105,22 +138,22 @@ class Rover {
 
             case 'drive_cm':
                 distance = parseInt(command[command.type].distance);
-                this.gpg.driveCm(distance);
+                this.gpg.driveCm(distance, () => this._stopVehicle());
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a distance of ${distance}`);
                 break;
-            case 'rotate_horizontal':
+            case 'pan':
                 rotation = parseInt(command[command.type].rotation);
                 this.servoHorizontal.rotateServo(rotation);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a rotation of ${rotation} degrees.`);
                 break;
-            case 'rotate_vertical':
+            case 'tilt':
                 rotation = parseInt(command[command.type].rotation);
                 this.servoVertical.rotateServo(rotation);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a rotation of ${rotation} degrees.`);
                 break;
             case 'drive_degrees':
                 distance = parseInt(command[command.type].distance);
-                this.gpg.driveDegrees(distance);
+                this.gpg.driveDegrees(distance, () => this._stopVehicle());
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a distance of ${distance}`);
                 break;
 
@@ -130,6 +163,7 @@ class Rover {
                 speed = parseInt(command[command.type].speed);
                 this.gpg.setSpeed(speed);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with speed of ${speed}`);
+                this.commandQueue.unblock();
                 break;
 
             case 'image':
@@ -145,13 +179,19 @@ class Rover {
                             }
                         }, (err) => {
                             if (err) return console.log(err);
+                            this.commandQueue.unblock();
                             console.log('debug', '[POST]', `Sent file to recogniser.`);
                         });
                     })
-                    .catch((err) => console.log(err));
+                    .catch((err) => {
+                        console.log(err);
+                        this.commandQueue.unblock();
+                    });
                 break;
 
-            case 'bulk': break;
+            case 'bulk': 
+                _.each(command, (item) => this.commandQueue.add(item));
+            break;
             default: break;
         }
     }
@@ -159,7 +199,22 @@ class Rover {
     _stopVehicle() {
         this.gpg.stop();
         console.log('debug', '[EXECUTE]', `Executing stop after elapsed time`);
+        this.commandQueue.unblock();
     }
+
+    _listenInternal() {
+        this.queueInterval = setInterval(() => {
+
+            if(!this.commandQueue.waitForMessage()) 
+                return;
+
+            this.commandQueue.block();
+            let command = this.commandQueue.remove();
+            this._executeInternal(command);      
+
+        }, 100);
+    }
+
 }
 
 module.exports = Rover;

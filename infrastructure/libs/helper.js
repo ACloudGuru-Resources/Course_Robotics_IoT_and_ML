@@ -42,6 +42,10 @@ function parseEvent(event) {
     return typeof event === 'object' ? event : JSON.parse(event);
 }
 
+function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 module.exports = {
     parseBody,
     success,
@@ -50,5 +54,6 @@ module.exports = {
     notmodified,
     parameterValue,
     path,
-    parseEvent
+    parseEvent,
+    capitalizeFirstLetter
 }

@@ -1,7 +1,7 @@
 let { Iot, IotData } = require('aws-sdk');
 let _ = require('lodash');
 let { v4 } = require('uuid');
-
+let { capitalizeFirstLetter } = require('./helper');
 // Priority
 const Priority = {
     LOW: 'low',
@@ -23,8 +23,8 @@ const CommandType = {
     SET_SPEED: 'set_speed',
     IMAGE: 'image',
     BULK: 'bulk',
-    ROTATE_HORIZONTAL: 'rotate_horizontal',
-    ROTATE_VERTICAL: 'rotate_vertical'
+    PAN: 'pan',
+    TILT: 'tilt'
 };
 
 const VERSION = '1.0';
@@ -146,21 +146,33 @@ class Commander {
         return commandPayload;          
     }
 
-    _buildBulkCommands(commands) {
-        let commandData = commands;
-        let commandPayload = this._buildCommandData(commandData, CommandType.BULK);
-        return commandPayload;
-    }
-
     _buildImage() {
         let commandData = {};
         let commandPayload = this._buildCommandData(commandData, CommandType.IMAGE);
         return commandPayload;
     }
 
-    _buildRotate(horizontal = true, rotation = 90) {
+    _buildPan(rotation = 90) {
         let commandData = { rotation: rotation };
-        let commandPayload = this._buildCommandData(commandData, horizontal ? CommandType.ROTATE_HORIZONTAL : CommandType.ROTATE_VERTICAL);
+        let commandPayload = this._buildCommandData(commandData, CommandType.PAN);
+        return commandPayload;
+    }
+    
+    _buildTilt(rotation = 90) {
+        let commandData = { rotation: rotation };
+        let commandPayload = this._buildCommandData(commandData, CommandType.TILT);
+        return commandPayload;
+    }
+
+    _buildBulkCommands(commands) {
+
+        let transformedPayload = _.map(commands, (command) => {
+            let values = _.values(command.attributes);
+            return this['_build' + capitalizeFirstLetter(data.type)].call(this, ...values);
+        })
+
+        let commandPayload = this._buildCommandData(transformedPayload, CommandType.BULK);
+
         return commandPayload;
     }
 
@@ -213,17 +225,17 @@ class Commander {
         return this._publish(this._buildDriveDegrees(degrees));           
     }
 
-    rotateHorizontal(rotation = 90) {
+    pan(rotation = 90) {
         this.isInitialized(true);
-        return this._publish(this._buildRotate(true, rotation));
+        return this._publish(this._buildPan(rotation));
     }
 
-    rotateVertical(rotation = 90) {
+    tilt(rotation = 90) {
         this.isInitialized(true);
-        return this._publish(this._buildRotate(false, rotation));
+        return this._publish(this._buildTilt(rotation));
     }
 
-    bulkCommands(commands) {
+    commands(commands) {
         this.isInitialized(true);
         return this._publish(this._buildBulkCommands(commands));
     }
