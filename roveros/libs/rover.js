@@ -11,7 +11,7 @@ const COMMANDS = ['forward', 'backward', 'stop', 'left', 'right', 'tilt', 'pan',
 
 
 class RoverCommand {
-    
+
     constructor(gpg) {
         this.gpg = gpg;
     }
@@ -88,10 +88,16 @@ class Rover {
         }
     }
 
-    execute(command) {
-        if(!_.isArray(command))
-            command = [command];
-        _.each(command, (item) => this.commandQueue.add(item));
+    execute({ type, attributes }) {
+
+        if (!_.includes(COMMANDS, type)) return;
+
+        if (type == 'bulk' && _.isArray(attributes))
+            _.each(attributes, (item) => this.commandQueue.add(item));
+
+        if(!_.isArray(attributes))
+            this.commandQueue.add({type, attributes})
+
     }
 
     _executeInternal(command) {
@@ -104,14 +110,14 @@ class Rover {
 
         switch (command.type) {
             case 'forward':
-                delay = parseInt(command[command.type].delay);
+                delay = parseInt(command.attributes.delay);
                 this.gpg.forward();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'backward':
-                delay = parseInt(command[command.type].delay);
+                delay = parseInt(command.attributes.delay);
                 this.gpg.backward();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
@@ -123,36 +129,38 @@ class Rover {
                 break;
 
             case 'left':
-                delay = parseInt(command[command.type].delay);
+                delay = parseInt(command.attributes.delay);
                 this.gpg.left();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'right':
-                delay = parseInt(command[command.type].delay);
+                delay = parseInt(command.attributes.delay);
                 this.gpg.right();
                 if (delay > 0) setTimeout(this.stopVehicle, delay);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a delay of ${delay}`);
                 break;
 
             case 'drive_cm':
-                distance = parseInt(command[command.type].distance);
+                distance = parseInt(command.attributes.distance);
                 this.gpg.driveCm(distance, () => this._stopVehicle());
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a distance of ${distance}`);
                 break;
             case 'pan':
-                rotation = parseInt(command[command.type].rotation);
+                rotation = parseInt(command.attributes.rotation);
                 this.servoHorizontal.rotateServo(rotation);
+                this.commandQueue.unblock();
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a rotation of ${rotation} degrees.`);
                 break;
             case 'tilt':
-                rotation = parseInt(command[command.type].rotation);
+                rotation = parseInt(command.attributes.rotation);
                 this.servoVertical.rotateServo(rotation);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a rotation of ${rotation} degrees.`);
+                this.commandQueue.unblock();
                 break;
             case 'drive_degrees':
-                distance = parseInt(command[command.type].distance);
+                distance = parseInt(command.attributes.distance);
                 this.gpg.driveDegrees(distance, () => this._stopVehicle());
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with a distance of ${distance}`);
                 break;
@@ -160,7 +168,7 @@ class Rover {
             case 'left_eye': break;
             case 'right_eye': break;
             case 'set_speed':
-                speed = parseInt(command[command.type].speed);
+                speed = parseInt(command.attributes.speed);
                 this.gpg.setSpeed(speed);
                 console.log('debug', '[EXECUTE]', `Executed ${command.type} with speed of ${speed}`);
                 this.commandQueue.unblock();

@@ -66,7 +66,7 @@ class Commander {
         innerPayload['timestamp'] = Date.now();
         innerPayload['priority'] = priority;
         innerPayload['type'] = type;
-        innerPayload[type] = data;
+        innerPayload['attributes'] = data;
 
         outerPayload['payload'] = JSON.stringify(innerPayload);
 
@@ -78,13 +78,7 @@ class Commander {
     _buildCommandData(commandData, commandType, priority = Priority.LOW) {
 
         const commandTopic = this._buildCommandTopic(commandType);
-        const data = this._buildBase({
-            priority: priority,
-            topic: commandTopic,
-            type: commandType,
-            data: commandData
-        });
-
+        const data = this._buildBase({ priority: priority, topic: commandTopic, type: commandType, data: commandData});
         return data;
     }
 
@@ -98,84 +92,6 @@ class Commander {
         })
     }
 
-    _buildSetSpeed(speed) {
-        let commandData = { speed: speed };
-        let commandPayload = this._buildCommandData(commandData, CommandType.SET_SPEED);
-        return commandPayload;
-    }
-
-    _buildForward(delay = 0) {
-        let commandData = { delay: delay };
-        let commandPayload = this._buildCommandData(commandData, CommandType.FORWARD);
-        return commandPayload;
-    }
-
-    _buildBackward(delay = 0) {
-        let commandData = { delay: delay };
-        let commandPayload = this._buildCommandData(commandData, CommandType.BACKWARD);
-        return commandPayload
-    }
-
-    _buildRight(delay = 0) {
-        let commandData = { delay: delay };
-        let commandPayload = this._buildCommandData(commandData, CommandType.RIGHT);
-        return commandPayload;
-    }
-
-    _buildLeft(delay = 0) {
-        let commandData = { delay: delay };
-        let commandPayload = this._buildCommandData(commandData, CommandType.LEFT);
-        return commandPayload;
-    }
-
-    _buildStop() {
-        let commandData = {};
-        let commandPayload = this._buildCommandData(commandData, CommandType.STOP);
-        return commandPayload;
-    }
-
-    _buildDrive(distance = 50) {
-        let commandData = { distance: distance };
-        let commandPayload = this._buildCommandData(commandData, CommandType.DRIVE_CM);
-        return commandPayload;      
-    }
-
-    _buildDriveDegrees(degrees = 360) {
-        let commandData = { degrees: degrees };
-        let commandPayload = this._buildCommandData(commandData, CommandType.DRIVE_DEGREES);
-        return commandPayload;          
-    }
-
-    _buildImage() {
-        let commandData = {};
-        let commandPayload = this._buildCommandData(commandData, CommandType.IMAGE);
-        return commandPayload;
-    }
-
-    _buildPan(rotation = 90) {
-        let commandData = { rotation: rotation };
-        let commandPayload = this._buildCommandData(commandData, CommandType.PAN);
-        return commandPayload;
-    }
-    
-    _buildTilt(rotation = 90) {
-        let commandData = { rotation: rotation };
-        let commandPayload = this._buildCommandData(commandData, CommandType.TILT);
-        return commandPayload;
-    }
-
-    _buildBulkCommands(commands) {
-
-        let transformedPayload = _.map(commands, (command) => {
-            let values = _.values(command.attributes);
-            return this['_build' + capitalizeFirstLetter(data.type)].call(this, ...values);
-        })
-
-        let commandPayload = this._buildCommandData(transformedPayload, CommandType.BULK);
-
-        return commandPayload;
-    }
-
     isInitialized(withError = false) {
         const isInitialized = this.endpoint !== undefined;
 
@@ -187,68 +103,76 @@ class Commander {
 
     setSpeed(speed) {
         this.isInitialized(true);
-        return this._publish(this._buildSetSpeed(speed));
+        return this._publish(this._buildCommandData({ speed: speed }, CommandType.SET_SPEED));
     }
 
     forward(delay = 0) {
         this.isInitialized(true);
-        return this._publish(this._buildForward(delay));
+        return this._publish(this._buildCommandData({ delay: delay }, CommandType.FORWARD));
     }
 
     backward(delay = 0) {
         this.isInitialized(true);
-        return this._publish(this._buildBackward(delay));
+        return this._publish(this._buildCommandData({ delay: delay }, CommandType.BACKWARD));
     }
 
     right(delay = 0) {
         this.isInitialized(true);
-        return this._publish(this._buildRight(delay));
+        return this._publish(this._buildCommandData({ delay: delay }, CommandType.RIGHT));
     }
 
     left(delay = 0) {
         this.isInitialized(true);
-        return this._publish(this._buildLeft(delay));
+        return this._publish(this._buildCommandData({ delay: delay }, CommandType.LEFT));
     }
 
     stop() {
         this.isInitialized(true);
-        return this._publish(this._buildStop());
+        return this._publish(this._buildCommandData({}, CommandType.STOP));
     }
 
     drive(distance = 50) {
         this.isInitialized(true);
-        return this._publish(this._buildDrive(distance));        
+        return this._publish(this._buildCommandData({ distance: distance }, CommandType.DRIVE_CM));        
     }
 
     driveDegrees(degrees = 360) {
         this.isInitialized(true);
-        return this._publish(this._buildDriveDegrees(degrees));           
+        return this._publish(this._buildCommandData({ distance: distance }, CommandType.DRIVE_DEGREES));           
     }
 
     pan(rotation = 90) {
         this.isInitialized(true);
-        return this._publish(this._buildPan(rotation));
+        return this._publish(this._buildCommandData({ rotation: rotation }, CommandType.PAN));
     }
 
     tilt(rotation = 90) {
         this.isInitialized(true);
-        return this._publish(this._buildTilt(rotation));
+        return this._publish(this._buildCommandData({ rotation: rotation }, CommandType.TILT));
+    }
+
+    image() {
+        this.isInitialized(true);
+        return this._publish(this._buildCommandData({}, CommandType.IMAGE));
     }
 
     commands(commands) {
         this.isInitialized(true);
-        return this._publish(this._buildBulkCommands(commands));
-    }
-    image() {
-        this.isInitialized(true);
-        return this._publish(this._buildImage());
+        return this._publish(this._buildCommandData(commands, CommandType.BULK));
     }
 
     execute(data) {
         if(typeof this[data.type] != 'function' || data.type.toLowerCase() == 'execute')
             throw `Command ${data.type} doesn't exist.`
 
-        let values = _.values(data.attributes);
+        let values;
+
+        if(data.type === 'commands') {
+            values = data.attributes;
+            return this['commands'].call(this, values);
+        }
+        else
+            values = _.values(data.attributes);
 
         return this[data.type].call(this, ...values);
     }

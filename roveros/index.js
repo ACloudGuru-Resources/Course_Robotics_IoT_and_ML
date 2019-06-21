@@ -94,14 +94,9 @@ function bootstrap(cfg) {
             config['baseEvent'].last_command = data;
 
             if(topic.includes('control')) {
-
-                let command = {}
                 try {
-                    
-                    command['type'] = data.type;
-                    command[data.type] = data[data.type];
-                    rover.execute(command);
-
+                    let { type, attributes } = data;
+                    rover.execute({type, attributes});
                 }catch(e) {
                     console.log(e);
                 }

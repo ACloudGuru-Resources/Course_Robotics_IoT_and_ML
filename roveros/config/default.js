@@ -14,7 +14,7 @@ module.exports = {
     'deviceSerial': process.env.SERIAL_NO,
     'sensors': {
         'enabled': true,
-        'pollingInterval': 30000, // 5 sec polling interval
+        'pollingInterval': 120000, // 5 sec polling interval
     },
     'log': 'debug'
 }

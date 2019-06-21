@@ -5,11 +5,16 @@ class Queue {
     }
 
     add(item) {
+        console.log('debug','[QUEUE]', `Added item: ` + JSON.stringify(item));
+        this.report();
         this.queue.unshift(item);
     }
 
     remove() {
-        return this.queue.pop();
+        let item = this.queue.pop();
+        console.log('debug','[QUEUE]', `Removed item: ` + JSON.stringify(item));
+        this.report();
+        return item;
     }
 
     first() {
@@ -30,12 +35,18 @@ class Queue {
     }
 
     block() {
-        this.block = true;
+        this.isBlocked = true;
     }
 
     unblock() {
-        this.block = false;
-    }    
+        this.isBlocked = false;
+    }
+
+    report() {
+        console.log('debug','[QUEUE]', 'Size: ' + this.size());
+        console.log('debug','[QUEUE]', 'Blocked: ' + this.isBlocked);
+        console.log('debug','[QUEUE]', 'Content: ' + JSON.stringify(this.queue));
+    }
 }
 
 module.exports = Queue;
