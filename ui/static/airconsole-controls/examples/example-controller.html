@@ -1,10 +1,22 @@
+<!--
+
+
+
+
+   INSTEAD OF EDITING THIS HTML FILE, USE OUR CONTROLLER GENERATOR:
+   http://developers.airconsole.com/tools/airconsole-controls/ctrl-generator/controller.html
+
+
+
+
+!-->
 <html>
   <head>
     <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-    <script type="text/javascript" src="airconsole-controls/dpad/dpad.js"></script>
-    <link rel="stylesheet" href="airconsole-controls/dpad/dpad.css">
-    <script type="text/javascript" src="airconsole-controls/button/button.js"></script>
-    <link rel="stylesheet" href="airconsole-controls/button/button.css">
+    <script type="text/javascript" src="../dpad/dpad.js"></script>
+    <link rel="stylesheet" href="../dpad/dpad.css">
+    <script type="text/javascript" src="../button/button.js"></script>
+    <link rel="stylesheet" href="../button/button.css">
     <script type="text/javascript" src="fake-airconsole.js"></script>
     <style type="text/css">
       body {
@@ -125,7 +137,7 @@
       </div>
       <div id="dpad" class="dpad">
         <div class="dpad-relative">
-          <div class="dpad-instructions">DRIVE</div>
+          <div class="dpad-instructions">SWIPE</div>
           <div class="dpad-arrow dpad-arrow-up"></div>
           <div class="dpad-arrow dpad-arrow-down"></div>
           <div class="dpad-arrow dpad-arrow-left"></div>
@@ -164,7 +176,6 @@
           });
         }
       });
-
       new Button("start", {
         "down": function () {
           airconsole.message(AirConsole.SCREEN, {"start": "down"});

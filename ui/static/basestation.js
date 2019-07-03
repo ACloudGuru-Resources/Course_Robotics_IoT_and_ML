@@ -1,3 +1,10 @@
+var baseUrl = 'https://q0lh864dc2.execute-api.us-east-1.amazonaws.com/dev/api/';
+
+var commands = {
+  type: 'commands',
+  attributes: []
+};
+
 $(document).ready(function() {
     $("#forward_button").click(function(e) {
       console.log(e);
@@ -12,7 +19,7 @@ $(document).ready(function() {
         }),
         contentType: "application/json; charset=utf-8",
         dataType: "json",
-        url: 'https://q0lh864dc2.execute-api.us-east-1.amazonaws.com/dev/api/control',
+        url: baseUrl + 'control',
         success: function(result) {
           console.log(result);
           $( ".output" ).text(result);
@@ -34,7 +41,7 @@ $(document).ready(function() {
           }),
           contentType: "application/json; charset=utf-8",
           dataType: "json",
-          url: 'https://q0lh864dc2.execute-api.us-east-1.amazonaws.com/dev/api/control',
+          url: baseUrl + 'control',
           success: function(result) {
             console.log(result);
             $( ".output" ).text(result);
